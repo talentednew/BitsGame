@@ -1,0 +1,159 @@
+// use scala 2.1 (need to download the spark 2.1hadoop2.6 on Dumbo/home)
+//null count for each variable
+(2015 until 2017).foreach(i => {
+val y = i 
+(1 until 13).foreach(j=>{
+var m = "0" + j
+if (j > 9) {
+m = j.toString
+}
+val inpath = "/home/jw4468/project/originals/yellow_tripdata_" + y + "-"+m +".csv"
+val df = spark.read.format("csv").option("header", "true").csv(inpath)
+if (y == 2016 & j > 6) {
+val nulCount = df.agg(sum(when($"VendorID".isNotNull,0).otherwise(1)).as("VendorIDNullCount"), sum(when($"tpep_pickup_datetime".isNotNull,0).otherwise(1)).as("PUdatetimeNullCount"), sum(when($"tpep_dropoff_datetime".isNotNull,0).otherwise(1)).as("DOdatetimeNullCount"), sum(when($"passenger_count".isNotNull,0).otherwise(1)).as("passengerCountNullCount"), sum(when($"trip_distance".isNotNull,0).otherwise(1)).as("tripDistanceNullCount"), sum(when($"RatecodeID".isNotNull,0).otherwise(1)).as("RatecodeIDNullCount"), sum(when($"store_and_fwd_flag".isNotNull,0).otherwise(1)).as("SFFlagNullCount"), sum(when($"PULocationID".isNotNull,0).otherwise(1)).as("PULocationIDNullCount"), sum(when($"DOLocationID".isNotNull,0).otherwise(1)).as("DOLocationID"), sum(when($"payment_type".isNotNull,0).otherwise(1)).as("paymentTypeNullCount"), sum(when($"fare_amount".isNotNull,0).otherwise(1)).as("fareAmountNullCount"), sum(when($"extra".isNotNull,0).otherwise(1)).as("extraNullCount"), sum(when($"mta_tax".isNotNull,0).otherwise(1)).as("mtaTaxNullCount"), sum(when($"tip_amount".isNotNull,0).otherwise(1)).as("tipAmountNullCount"), sum(when($"tolls_amount".isNotNull,0).otherwise(1)).as("tollsAmountNullCountolls"), sum(when($"improvement_surcharge".isNotNull,0).otherwise(1)).as("improvementSurchargeNullCount"), sum(when($"total_amount".isNotNull,0).otherwise(1)).as("totalAmountNullCount"))
+nulCount.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/nullCount/" + y + m + "nullCount")
+} else {
+val nulCount = df.agg(sum(when($"VendorID".isNotNull,0).otherwise(1)).as("VendorIDNullCount"), sum(when($"tpep_pickup_datetime".isNotNull,0).otherwise(1)).as("PUdatetimeNullCount"), sum(when($"tpep_dropoff_datetime".isNotNull,0).otherwise(1)).as("DOdatetimeNullCount"), sum(when($"passenger_count".isNotNull,0).otherwise(1)).as("passengerCountNullCount"), sum(when($"trip_distance".isNotNull,0).otherwise(1)).as("tripDistanceNullCount"), sum(when($"pickup_longitude".isNotNull,0).otherwise(1)).as("PUlongitudeNullCount"), sum(when($"pickup_latitude".isNotNull,0).otherwise(1)).as("PUlatitudeNullCount"), sum(when($"RatecodeID".isNotNull,0).otherwise(1)).as("RatecodeIDNullCount"), sum(when($"store_and_fwd_flag".isNotNull,0).otherwise(1)).as("SFFlagNullCount"), sum(when($"dropoff_longitude".isNotNull,0).otherwise(1)).as("DOlongitudeNullCount"), sum(when($"dropoff_latitude".isNotNull,0).otherwise(1)).as("DOlatitudeNullCount"), sum(when($"payment_type".isNotNull,0).otherwise(1)).as("paymentTypeNullCount"), sum(when($"fare_amount".isNotNull,0).otherwise(1)).as("fareAmountNullCount"), sum(when($"extra".isNotNull,0).otherwise(1)).as("extraNullCount"), sum(when($"mta_tax".isNotNull,0).otherwise(1)).as("mtaTaxNullCount"), sum(when($"tip_amount".isNotNull,0).otherwise(1)).as("tipAmountNullCount"), sum(when($"tolls_amount".isNotNull,0).otherwise(1)).as("tollsAmountNullCountolls"), sum(when($"improvement_surcharge".isNotNull,0).otherwise(1)).as("improvementSurchargeNullCount"), sum(when($"total_amount".isNotNull,0).otherwise(1)).as("totalAmountNullCount"))	
+nulCount.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/nullCount/" + y + m + "nullCount")
+}
+})
+})
+
+//combine into two parts: 2015-2016firstHalfYear and 2016firstSecondHalfYear
+var df2015 = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/nullCount/201501nullCount/p*.csv")
+var df2016 = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/nullCount/201607nullCount/p*.csv")
+(2015 until 2017).foreach(i => {
+val y = i 
+(1 until 13).foreach(j=>{
+var m = "0" + j
+if (j > 9) {
+m = j.toString
+}
+if (i == 2016 & j > 7) {
+val inpath = "/home/jw4468/project/dataquality/nullCount/"+ y + m +"nullCount/p*.csv"
+val df1 = spark.read.format("csv").option("header", "true").csv(inpath)
+df2016 = df2016.union(df1)
+} 
+if ((i == 2015 & j > 1) | (i == 2016 & j < 7)){
+val inpath = "/home/jw4468/project/dataquality/nullCount/"+ y + m +"nullCount/p*.csv"
+val df1 = spark.read.format("csv").option("header", "true").csv(inpath)
+df2015 = df2015.union(df1)
+}
+})
+})
+df2015.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/nullCount/2015-2016FirstHalfYearnullCount")
+df2016.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/nullCount/2016SecondHalfyearnullCount")
+
+
+
+
+//not valid count
+(2015 until 2017).foreach(i => {
+val y = i 
+(1 until 13).foreach(j=>{
+var m = "0" + j
+if (j > 9) {
+m = j.toString
+}
+val inpath = "/home/jw4468/project/originals/yellow_tripdata_" + y + "-"+m +".csv"
+val df = spark.read.format("csv").option("header", "true").csv(inpath)
+if (i == 2016 & j > 6) {
+val notValidCount = df.agg(sum(when($"VendorID".isNotNull and $"VendorID".cast("int") =!= 1 and $"VendorID".cast("int") =!= 2, 1).otherwise(0)).as("VendorIDNotValidCount"), sum(when($"tpep_pickup_datetime".isNotNull and year($"tpep_pickup_datetime") =!= i.toString or month($"tpep_pickup_datetime") =!= j.toString,1).otherwise(0)).as("PUdatetimeNotValidCount"), sum(when($"tpep_dropoff_datetime".isNotNull and year($"tpep_dropoff_datetime") =!= i.toString or month($"tpep_dropoff_datetime") =!= j.toString,1).otherwise(0)).as("DOdatetimeNotValidCount"), sum(when($"passenger_count".isNotNull and $"passenger_count".cast("int") < 1 or $"passenger_count".cast("int") > 9,1).otherwise(0)).as("passengerCountNotValidCount"), sum(when($"trip_distance".isNotNull and $"trip_distance".cast("float") <= 0,1).otherwise(0)).as("tripDistanceNotValidCount"), sum(when($"RatecodeID".isNotNull and $"RatecodeID".cast("int") < 1 or $"RatecodeID".cast("int") > 6,1).otherwise(0)).as("RatecodeIDNotValidCount"), sum(when($"store_and_fwd_flag".isNotNull and $"store_and_fwd_flag" =!= "N" and $"store_and_fwd_flag" =!= "Y" ,1).otherwise(0)).as("SFFlagNotValidCount"), sum(when($"PULocationID".isNotNull and $"PULocationID".cast("int") < 1 or $"PULocationID".cast("int") > 263,1).otherwise(0)).as("PULocationIDNotValidCount"), sum(when($"DOLocationID".isNotNull and $"DOLocationID".cast("int") < 1 or $"DOLocationID".cast("int") > 263,1).otherwise(0)).as("DOLocationIDNotValidCount"), sum(when($"payment_type".isNotNull and $"payment_type".cast("int") < 1 or $"payment_type".cast("int") > 6,1).otherwise(0)).as("paymentTypeNotValidCount"), sum(when($"fare_amount".isNotNull and $"fare_amount".cast("float") <= 0 ,1).otherwise(0)).as("fareAmountNotValidCount"), sum(when($"extra".isNotNull and $"extra".cast("float") < 0,1).otherwise(0)).as("extraNotValidCount"), sum(when($"mta_tax".isNotNull and $"mta_tax".cast("float") < 0.50,1).otherwise(0)).as("mtaTaxNotValidCount"), sum(when($"tip_amount".isNotNull and $"tip_amount".cast("float") < 0,1).otherwise(0)).as("tipAmountNotValidCount"), sum(when($"tolls_amount".isNotNull and $"tolls_amount".cast("float") < 0,1).otherwise(0)).as("tollsAmountNotValidCountolls"), sum(when($"improvement_surcharge".isNotNull and $"improvement_surcharge".cast("float") < 0.299 or $"improvement_surcharge".cast("float") > 0.301,1).otherwise(0)).as("improvementSurchargeNotValidCount"), sum(when($"total_amount".isNotNull and $"total_amount".cast("float") <=  $"fare_amount".cast("float") or $"total_amount".cast("float") <= $"tip_amount".cast("float") or $"total_amount".cast("float") <=  $"extra".cast("float") or $"total_amount".cast("float") <= $"mta_tax".cast("float") or $"total_amount".cast("float") <= $"tolls_amount".cast("float") or $"total_amount".cast("float") <=  $"improvement_surcharge".cast("float"),1).otherwise(0)).as("totalAmountNotValidCount"))
+notValidCount.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/notValidCount/" + y + m + "NotValidCount")
+} else {
+val notValidCount = df.agg(sum(when($"VendorID".isNotNull and $"VendorID".cast("int") =!= 1 and $"VendorID".cast("int") =!= 2, 1).otherwise(0)).as("VendorIDNotValidCount"), sum(when($"tpep_pickup_datetime".isNotNull and year($"tpep_pickup_datetime") =!= i.toString or month($"tpep_pickup_datetime") =!= j.toString,1).otherwise(0)).as("PUdatetimeNotValidCount"), sum(when($"tpep_dropoff_datetime".isNotNull and year($"tpep_dropoff_datetime") =!= i.toString or month($"tpep_dropoff_datetime") =!= j.toString,1).otherwise(0)).as("DOdatetimeNotValidCount"), sum(when($"passenger_count".isNotNull and $"passenger_count".cast("int") < 1 or $"passenger_count".cast("int") > 9,1).otherwise(0)).as("passengerCountNotValidCount"), sum(when($"trip_distance".isNotNull and $"trip_distance".cast("float") <= 0,1).otherwise(0)).as("tripDistanceNotValidCount"), sum(when($"pickup_longitude".isNotNull and $"pickup_longitude".cast("float") > -73.7004 or $"pickup_longitude".cast("float") < -74.15,1).otherwise(0)).as("PUlongitudeNotValidCount"), sum(when($"pickup_latitude".isNotNull and $"pickup_latitude".cast("float") < 40.5774 or $"pickup_latitude".cast("float") > 40.9176,1).otherwise(0)).as("PUlatitudeNotValidCount"), sum(when($"RatecodeID".isNotNull and $"RatecodeID".cast("int") < 1 or $"RatecodeID".cast("int") > 6,1).otherwise(0)).as("RatecodeIDNotValidCount"), sum(when($"store_and_fwd_flag".isNotNull and $"store_and_fwd_flag" =!= "N" and $"store_and_fwd_flag" =!= "Y" ,1).otherwise(0)).as("SFFlagNotValidCount"), sum(when($"dropoff_longitude".isNotNull and $"dropoff_longitude".cast("float") > -73.7004 or $"dropoff_longitude".cast("float") < -74.15, 1).otherwise(0)).as("DOlongitudeNotValidCount"), sum(when($"dropoff_latitude".isNotNull and $"dropoff_latitude".cast("float") < 40.5774 or $"dropoff_latitude".cast("float") > 40.9176,1).otherwise(0)).as("DOlatitudeNotValidCount"), sum(when($"payment_type".isNotNull and $"payment_type".cast("int") < 1 or $"payment_type".cast("int") > 6,1).otherwise(0)).as("paymentTypeNotValidCount"), sum(when($"fare_amount".isNotNull and $"fare_amount".cast("float") <= 0 ,1).otherwise(0)).as("fareAmountNotValidCount"), sum(when($"extra".isNotNull and $"extra".cast("float") < 0,1).otherwise(0)).as("extraNotValidCount"), sum(when($"mta_tax".isNotNull and $"mta_tax".cast("float") < 0.50,1).otherwise(0)).as("mtaTaxNotValidCount"), sum(when($"tip_amount".isNotNull and $"tip_amount".cast("float") < 0,1).otherwise(0)).as("tipAmountNotValidCount"), sum(when($"tolls_amount".isNotNull and $"tolls_amount".cast("float") < 0,1).otherwise(0)).as("tollsAmountNotValidCountolls"), sum(when($"improvement_surcharge".isNotNull and $"improvement_surcharge".cast("float") < 0.299 or $"improvement_surcharge".cast("float") > 0.301,1).otherwise(0)).as("improvementSurchargeNotValidCount"), sum(when($"total_amount".isNotNull and $"total_amount".cast("float") <=  $"fare_amount".cast("float") or $"total_amount".cast("float") <= $"tip_amount".cast("float") or $"total_amount".cast("float") <=  $"extra".cast("float") or $"total_amount".cast("float") <= $"mta_tax".cast("float") or $"total_amount".cast("float") <= $"tolls_amount".cast("float") or $"total_amount".cast("float") <=  $"improvement_surcharge".cast("float"),1).otherwise(0)).as("totalAmountNotValidCount"))	
+notValidCount.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/notValidCount/" + y + m + "NotValidCount")
+}
+})
+})
+
+//combine into two parts: 2015-2016firstHalfYear 2016SecondHalfYear
+var df2015 = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/notValidCount/201501NotValidCount/p*.csv")
+var df2016 = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/notValidCount/201607NotValidCount/p*.csv")
+(2015 until 2017).foreach(i => {
+val y = i 
+(1 until 13).foreach(j=>{
+var m = "0" + j
+if (j > 9) {
+m = j.toString
+}
+if (i == 2016 & j > 7) {
+val inpath = "/home/jw4468/project/dataquality/notValidCount/"+ y + m +"NotValidCount/p*.csv"
+val df1 = spark.read.format("csv").option("header", "true").csv(inpath)
+df2016 = df2016.union(df1)
+} 
+if ((i == 2015 & j > 1) | (i == 2016 & j < 7)){
+val inpath = "/home/jw4468/project/dataquality/notValidCount/"+ y + m +"NotValidCount/p*.csv"
+val df1 = spark.read.format("csv").option("header", "true").csv(inpath)
+df2015 = df2015.union(df1)
+}
+})
+})
+df2015.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/notValidCount/2015-2016FirstHalfYearNotValidCount")
+df2016.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/notValidCount/2016SecondHalfyearNotValidCount")
+
+
+//valid
+(2015 until 2017).foreach(i => {
+val y = i 
+(1 until 13).foreach(j=>{
+var m = "0" + j
+if (j > 9) {
+m = j.toString
+}
+val inpath = "/home/jw4468/project/originals/yellow_tripdata_" + y + "-"+m +".csv"
+val df = spark.read.format("csv").option("header", "true").csv(inpath)
+if (i == 2016 & j > 6) {
+val ValidCount = df.agg(sum(when($"VendorID".isNotNull and $"VendorID".cast("int") === 1 or $"VendorID".cast("int") === 2, 1).otherwise(0)).as("VendorIDValidCount"), sum(when($"tpep_pickup_datetime".isNotNull and year($"tpep_pickup_datetime") === i.toString and month($"tpep_pickup_datetime") === j.toString,1).otherwise(0)).as("PUdatetimeValidCount"), sum(when($"tpep_dropoff_datetime".isNotNull and year($"tpep_dropoff_datetime") === i.toString and month($"tpep_dropoff_datetime") === j.toString,1).otherwise(0)).as("DOdatetimeValidCount"), sum(when($"passenger_count".isNotNull and $"passenger_count".cast("int") >= 1 and $"passenger_count".cast("int") <= 9 ,1).otherwise(0)).as("passengerCountValidCount"), sum(when($"trip_distance".isNotNull and $"trip_distance".cast("float") > 0,1).otherwise(0)).as("tripDistanceValidCount"), sum(when($"RatecodeID".isNotNull and $"RatecodeID".cast("int") >= 1 and $"RatecodeID".cast("int") <= 6,1).otherwise(0)).as("RatecodeIDValidCount"), sum(when($"store_and_fwd_flag".isNotNull and $"store_and_fwd_flag" === "N" or $"store_and_fwd_flag" === "Y" ,1).otherwise(0)).as("SFFlagValidCount"), sum(when($"PULocationID".isNotNull and $"PULocationID".cast("int") >= 1 and $"PULocationID".cast("int") <= 263,1).otherwise(0)).as("PULocationIDValidCount"), sum(when($"DOLocationID".isNotNull and $"DOLocationID".cast("int") >= 1 and $"DOLocationID".cast("int") <= 263,1).otherwise(0)).as("DOLocationIDValidCount"), sum(when($"payment_type".isNotNull and $"payment_type".cast("int") >= 1 and $"payment_type".cast("int") <= 6,1).otherwise(0)).as("paymentTypeValidCount"), sum(when($"fare_amount".isNotNull and $"fare_amount".cast("float") > 0 ,1).otherwise(0)).as("fareAmountValidCount"), sum(when($"extra".isNotNull and $"extra".cast("float") >= 0,1).otherwise(0)).as("extraValidCount"), sum(when($"mta_tax".isNotNull and $"mta_tax".cast("float") >= 0.50,1).otherwise(0)).as("mtaTaxValidCount"), sum(when($"tip_amount".isNotNull and $"tip_amount".cast("float") >= 0,1).otherwise(0)).as("tipAmountValidCount"), sum(when($"tolls_amount".isNotNull and $"tolls_amount".cast("float") >= 0,1).otherwise(0)).as("tollsAmountValidCountolls"), sum(when($"improvement_surcharge".isNotNull and $"improvement_surcharge".cast("float") >= 0.299 and $"improvement_surcharge".cast("float") <= 0.301,1).otherwise(0)).as("improvementSurchargeValidCount"), sum(when($"total_amount".isNotNull and $"total_amount".cast("float") >  $"fare_amount".cast("float") and $"total_amount".cast("float") > $"tip_amount".cast("float") and $"total_amount".cast("float") >  $"extra".cast("float") and $"total_amount".cast("float") > $"mta_tax".cast("float") and $"total_amount".cast("float") > $"tolls_amount".cast("float") and $"total_amount".cast("float") >  $"improvement_surcharge".cast("float"),1).otherwise(0)).as("totalAmountValidCount"))
+ValidCount.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/ValidCount/" + y + m + "ValidCount")
+} else {
+val ValidCount = df.agg(sum(when($"VendorID".isNotNull and $"VendorID".cast("int") === 1 or $"VendorID".cast("int") === 2, 1).otherwise(0)).as("VendorIDValidCount"), sum(when($"tpep_pickup_datetime".isNotNull and year($"tpep_pickup_datetime") === i.toString and month($"tpep_pickup_datetime") === j.toString,1).otherwise(0)).as("PUdatetimeValidCount"), sum(when($"tpep_dropoff_datetime".isNotNull and year($"tpep_dropoff_datetime") === i.toString and month($"tpep_dropoff_datetime") === j.toString,1).otherwise(0)).as("DOdatetimeValidCount"), sum(when($"passenger_count".isNotNull and $"passenger_count".cast("int") >= 1 and $"passenger_count".cast("int") <= 9 ,1).otherwise(0)).as("passengerCountValidCount"), sum(when($"trip_distance".isNotNull and $"trip_distance".cast("float") > 0,1).otherwise(0)).as("tripDistanceValidCount"), sum(when($"pickup_longitude".isNotNull and $"pickup_longitude".cast("float") >= -74.15 and $"pickup_longitude".cast("float") <= -73.7004,1).otherwise(0)).as("PUlongitudeValidCount"), sum(when($"pickup_latitude".isNotNull and $"pickup_latitude".cast("float") <= 40.9176 and $"pickup_latitude".cast("float") >= 40.5774,1).otherwise(0)).as("PUlatitudeValidCount"), sum(when($"RatecodeID".isNotNull and $"RatecodeID".cast("int") >= 1 and $"RatecodeID".cast("int") <= 6,1).otherwise(0)).as("RatecodeIDValidCount"), sum(when($"store_and_fwd_flag".isNotNull and $"store_and_fwd_flag" === "N" or $"store_and_fwd_flag" === "Y" ,1).otherwise(0)).as("SFFlagValidCount"), sum(when($"dropoff_longitude".isNotNull and $"dropoff_longitude".cast("float") >= -74.15 and $"dropoff_longitude".cast("float") <= -73.7004,1).otherwise(0)).as("DOlongitudeValidCount"), sum(when($"dropoff_latitude".isNotNull and $"dropoff_latitude".cast("float") <= 40.9176 and $"dropoff_latitude".cast("float") >= 40.5774,1).otherwise(0)).as("DOlatitudeValidCount"), sum(when($"payment_type".isNotNull and $"payment_type".cast("int") >= 1 and $"payment_type".cast("int") <= 6,1).otherwise(0)).as("paymentTypeValidCount"), sum(when($"fare_amount".isNotNull and $"fare_amount".cast("float") > 0 ,1).otherwise(0)).as("fareAmountValidCount"), sum(when($"extra".isNotNull and $"extra".cast("float") >= 0,1).otherwise(0)).as("extraValidCount"), sum(when($"mta_tax".isNotNull and $"mta_tax".cast("float") >= 0.50,1).otherwise(0)).as("mtaTaxValidCount"), sum(when($"tip_amount".isNotNull and $"tip_amount".cast("float") >= 0,1).otherwise(0)).as("tipAmountValidCount"), sum(when($"tolls_amount".isNotNull and $"tolls_amount".cast("float") >= 0,1).otherwise(0)).as("tollsAmountValidCountolls"), sum(when($"improvement_surcharge".isNotNull and $"improvement_surcharge".cast("float") >= 0.299 and $"improvement_surcharge".cast("float") <= 0.301,1).otherwise(0)).as("improvementSurchargeValidCount"), sum(when($"total_amount".isNotNull and $"total_amount".cast("float") >  $"fare_amount".cast("float") and $"total_amount".cast("float") > $"tip_amount".cast("float") and $"total_amount".cast("float") >  $"extra".cast("float") and $"total_amount".cast("float") > $"mta_tax".cast("float") and $"total_amount".cast("float") > $"tolls_amount".cast("float") and $"total_amount".cast("float") >  $"improvement_surcharge".cast("float"),1).otherwise(0)).as("totalAmountValidCount"))	
+ValidCount.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/ValidCount/" + y + m + "ValidCount")
+}
+})
+})
+
+//combine into two parts: 2015-2016firstHalfYear and 2016SecondHalfYear
+
+var df2015 = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/ValidCount/201501ValidCount/p*.csv")
+var df2016 = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/ValidCount/201607ValidCount/p*.csv")
+(2015 until 2017).foreach(i => {
+val y = i 
+(1 until 13).foreach(j=>{
+var m = "0" + j
+if (j > 9) {
+m = j.toString
+}
+if (i == 2016 & j > 7) {
+val inpath = "/home/jw4468/project/dataquality/ValidCount/"+ y + m +"ValidCount/p*.csv"
+val df1 = spark.read.format("csv").option("header", "true").csv(inpath)
+df2016 = df2016.union(df1)
+} 
+if ((i == 2015 & j > 1) | (i == 2016 & j < 7)){
+val inpath = "/home/jw4468/project/dataquality/ValidCount/"+ y + m +"ValidCount/p*.csv"
+val df1 = spark.read.format("csv").option("header", "true").csv(inpath)
+df2015 = df2015.union(df1)
+}
+})
+})
+df2015.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/ValidCount/2015-2016FirstHalfYearValidCount")
+df2016.coalesce(1).write.format("com.databricks.spark.csv").option("header", "true").save("/home/jw4468/project/dataquality/ValidCount/2016SecondHalfyearValidCount")
+
+
+// check all count
+var df2015null = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/nullCount/2015-2016FirstHalfYearnullCount/p*.csv")
+var df2016null = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/nullCount/2016SecondHalfyearnullCount/p*.csv")
+
+df2015null.show
+df2016null.show
+
+var df2015notValid = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/notValidCount/2015-2016FirstHalfYearNotValidCount/p*.csv")
+var df2016notValid = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/notValidCount/2016SecondHalfyearNotValidCount/p*.csv")
+df2015notValid.show
+df2016notValid.show
+
+
+var df2015Valid = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/ValidCount/2015-2016FirstHalfYearValidCount/p*.csv")
+var df2016Valid = spark.read.format("csv").option("header", "true").csv("/home/jw4468/project/dataquality/ValidCount/2016SecondHalfyearValidCount/p*.csv")
+df2015Valid.show
+df2016Valid.show
